@@ -6,9 +6,9 @@
     <title>個人記帳網站</title>
     <style>
         :root {
-            --primary-color: #B8C1C1; /* 默認莫蘭迪色系 */
-            --background-color: #F0F0F0; /* 背景色 */
-            --font-color: #333333; /* 字體顏色 */
+            --primary-color: #B8C1C1;
+            --background-color: #F0F0F0;
+            --font-color: #333333;
         }
 
         body {
@@ -34,9 +34,36 @@
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
-        .toggle-style {
-            margin: 20px 0;
-            text-align: center;
+        .login-form, .main-content {
+            display: none;
+        }
+
+        .login-form.active, .main-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input[type="text"], input[type="password"], input[type="number"], textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            border: none;
+            color: #fff;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 4px;
         }
 
         table {
@@ -54,18 +81,6 @@
         th {
             background-color: var(--primary-color);
         }
-
-        .cute-style {
-            --primary-color: #FFD5E5;
-            --background-color: #FFF0F5;
-            --font-color: #FF69B4;
-        }
-
-        .minimalist-style {
-            --primary-color: #B8C1C1;
-            --background-color: #F0F0F0;
-            --font-color: #333333;
-        }
     </style>
 </head>
 <body>
@@ -74,49 +89,48 @@
     </header>
 
     <div class="container">
-        <div class="toggle-style">
-            <label>切換風格：</label>
-            <button onclick="setStyle('minimalist')">簡約風</button>
-            <button onclick="setStyle('cute')">可愛風</button>
+        <!-- 登入畫面 -->
+        <div class="login-form active">
+            <h2>用戶登入</h2>
+            <div class="form-group">
+                <label for="username">用戶名</label>
+                <input type="text" id="username" placeholder="輸入用戶名">
+            </div>
+            <div class="form-group">
+                <label for="password">密碼</label>
+                <input type="password" id="password" placeholder="輸入密碼">
+            </div>
+            <button onclick="login()">登入</button>
         </div>
 
-        <h2>記帳記錄</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>日期</th>
-                    <th>分類</th>
-                    <th>支出</th>
-                    <th>收入</th>
-                    <th>備註</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>2024/08/09</td>
-                    <td>餐飲</td>
-                    <td>300</td>
-                    <td>-</td>
-                    <td>午餐</td>
-                </tr>
-                <!-- 更多記錄可以在這裡添加 -->
-            </tbody>
-        </table>
-    </div>
+        <!-- 主記帳頁面 -->
+        <div class="main-content">
+            <h2>記帳記錄</h2>
+            <div class="form-group">
+                <label for="date">日期</label>
+                <input type="text" id="date" placeholder="YYYY/MM/DD">
+            </div>
+            <div class="form-group">
+                <label for="category">分類</label>
+                <input type="text" id="category" placeholder="例如：餐飲、交通">
+            </div>
+            <div class="form-group">
+                <label for="amount">金額</label>
+                <input type="number" id="amount" placeholder="輸入金額">
+            </div>
+            <div class="form-group">
+                <label for="notes">備註</label>
+                <textarea id="notes" rows="3" placeholder="輸入備註"></textarea>
+            </div>
+            <button onclick="addRecord()">添加記錄</button>
 
-    <script>
-        function setStyle(style) {
-            if (style === 'cute') {
-                document.body.classList.remove('minimalist-style');
-                document.body.classList.add('cute-style');
-            } else {
-                document.body.classList.remove('cute-style');
-                document.body.classList.add('minimalist-style');
-            }
-        }
-
-        // 預設樣式
-        setStyle('minimalist');
-    </script>
-</body>
-</html>
+            <h3>記錄表格</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>日期</th>
+                        <th>分類</th>
+                        <th>金額</th>
+                        <th>備註</th>
+                    </tr>
+                </t
