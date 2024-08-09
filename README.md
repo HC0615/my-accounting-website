@@ -1,136 +1,90 @@
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>個人記帳網站</title>
-    <style>
-        :root {
-            --primary-color: #B8C1C1;
-            --background-color: #F0F0F0;
-            --font-color: #333333;
-        }
-
-        body {
-            background-color: var(--background-color);
-            color: var(--font-color);
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-
-        header {
-            background-color: var(--primary-color);
-            padding: 20px;
-            text-align: center;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .login-form, .main-content {
-            display: none;
-        }
-
-        .login-form.active, .main-content.active {
-            display: block;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        input[type="text"], input[type="password"], input[type="number"], textarea {
-            width: 100%;
-            padding: 8px;
-            box-sizing: border-box;
-        }
-
-        button {
-            background-color: var(--primary-color);
-            border: none;
-            color: #fff;
-            padding: 10px 15px;
-            cursor: pointer;
-            border-radius: 4px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: center;
-        }
-
-        th {
-            background-color: var(--primary-color);
-        }
-    </style>
-</head>
-<body>
-    <header>
-        <h1>個人記帳網站</h1>
-    </header>
-
-    <div class="container">
-        <!-- 登入畫面 -->
-        <div class="login-form active">
-            <h2>用戶登入</h2>
-            <div class="form-group">
-                <label for="username">用戶名</label>
-                <input type="text" id="username" placeholder="輸入用戶名">
-            </div>
-            <div class="form-group">
-                <label for="password">密碼</label>
-                <input type="password" id="password" placeholder="輸入密碼">
-            </div>
-            <button onclick="login()">登入</button>
-        </div>
-
-        <!-- 主記帳頁面 -->
-        <div class="main-content">
-            <h2>記帳記錄</h2>
-            <div class="form-group">
-                <label for="date">日期</label>
-                <input type="text" id="date" placeholder="YYYY/MM/DD">
-            </div>
-            <div class="form-group">
-                <label for="category">分類</label>
-                <input type="text" id="category" placeholder="例如：餐飲、交通">
-            </div>
-            <div class="form-group">
-                <label for="amount">金額</label>
-                <input type="number" id="amount" placeholder="輸入金額">
-            </div>
-            <div class="form-group">
-                <label for="notes">備註</label>
-                <textarea id="notes" rows="3" placeholder="輸入備註"></textarea>
-            </div>
-            <button onclick="addRecord()">添加記錄</button>
-
-            <h3>記錄表格</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>日期</th>
-                        <th>分類</th>
-                        <th>金額</th>
-                        <th>備註</th>
-                    </tr>
-                </t
+const express = require('express')
+const router = express.Router()
+const Record = require('../../models/record')
+const Category = require('../../models/category')
+//1. 篩選類別
+router.get('/category/:category', (req, res) => {
+  const name = req.params.category
+  const userId = req.user._id
+  const startMonth = new Date(new Date(new Date().setDate(1)).setHours(0, 0, 0, 0))
+  const endMonth = new Date(new Date(new Date().setDate(31)).setHours(23, 59, 59, 0))
+  const month = new Date().getMonth() + 1
+  return Category.findOne({name})
+    .then(category => {
+      Record.find({userId, categoryId: category.id, date: {$gte: startMonth, $lte: endMonth}})
+        .sort({ date: 1 })  
+        .lean()
+        .then(expenses => {
+          //計算該類別總金額
+          let totalAmount = 0
+          let monthAmount = 0
+          for (let i = 0; i < expenses.length; i++) {
+            monthAmount += expenses[i].amount
+          }
+          //計算當月總花費
+          Record.find({ userId, date: { $gte: startMonth, $lte: endMonth }})
+            .then(records => {
+              for(let i = 0; i < records.length; i++){
+                totalAmount += records[i].amount
+              }
+            })
+            .then(() => {
+              return res.render('index', { expenses, totalAmount, monthAmount, name, month })
+            })
+            .catch(err => console.log(err))
+        })
+        .catch(err => console.log(err))
+    })
+    .catch(err => console.log(err))
+})
+//2. 當日模式
+router.post('/', (req, res) => {
+  const mode = req.body.options
+  const userId = req.user._id
+  const today = {start: new Date(new Date().setHours(0, 0, 0, 0)), end: new Date(new Date().setHours(23, 59, 59, 0))}
+  const yesterday = {start: new Date(new Date(new Date().setDate(new Date().getDate() - 1)).setHours(0, 0, 0, 0)), end: new Date(new Date(new Date().setDate(new Date().getDate() - 1)).setHours(23, 59, 59, 0))}
+  const tomorrow = {start: new Date(new Date(new Date().setDate(new Date().getDate() + 1)).setHours(0, 0, 0, 0)), end: new Date( new Date(new Date().setDate(new Date().getDate() + 1)).setHours(23, 59, 59, 0))}
+  const selectedDate = [today, tomorrow, yesterday]
+  const record = []
+  const totalAmount = []
+  // 分別篩選今日、明日、昨日的支出
+  return Promise.all(
+    selectedDate.map((date, index) => {
+      return Record.find({ userId, 'date': { $gte: date.start, $lte: date.end }}).lean()
+    })    
+  ).then(results => {
+    results.map((expenses, index) => {
+      //計算當日總金額
+      let amount = 0
+      for (let i = 0; i < expenses.length; i++) {
+        amount += expenses[i].amount
+      }
+      totalAmount[index] = amount//將當日總金額加入陣列中
+      record[index] = expenses//將當日支出加入陣列中
+    })
+  })      
+  .then(() => {
+     res.render('index', {record, totalAmount, today, tomorrow, yesterday, mode})
+  })
+  .catch(err => console.log(err))
+})
+//3. 當月模式
+router.get('/', (req, res) => {
+  const userId = req.user._id
+  const startMonth = new Date(new Date(new Date().setDate(1)).setHours(0, 0, 0, 0))
+  const endMonth = new Date(new Date(new Date().setDate(31)).setHours(23, 59, 59, 0))
+  const month = new Date().getMonth() + 1
+  return Record.find({ userId, date: { $gte: startMonth, $lte: endMonth } })
+    .sort({date: 1})
+    .lean()
+    .then(expenses => {
+      //計算總金額
+      let totalAmount = 0
+      for (let i = 0; i < expenses.length; i++) {
+        totalAmount += expenses[i].amount
+      }
+      res.render('index', { expenses, totalAmount, month })
+    })
+    .catch(err => console.log(err))
+})
+module.exports = router
